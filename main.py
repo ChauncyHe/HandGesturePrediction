@@ -18,7 +18,16 @@ class HGP(object):
                                             save_path=self.dataset_plots_dir)
         self.CV_datasets = self.dataset_loader.K_fold_dataset_split(CV=5)
         self.my_model = MyModel(self.subj_name, )
+        
+    def create_directories(self, CV=5):
+        """create all directories for saving data/results"""
+        self.dataset_plots_dir = f'results/{self.subj_name}/dataset_plots'
+        os.makedirs(self.dataset_plots_dir, exist_ok=True)
 
+        self.cv_results_save_dir = f'results/{self.subj_name}/CV_results/'
+        for cv_index in range(1, CV + 1):
+            os.makedirs(self.cv_results_save_dir + f'cv_{cv_index}', exist_ok=True)
+    
     def train(self):
 
         for i, cv in enumerate([f'cv_{i}' for i in range(1, 6)]):
@@ -32,14 +41,7 @@ class HGP(object):
                                       file_save_path=self.cv_results_save_dir + '/' + cv, epochs=300,
                                       EarlyStop_patience=30)
 
-    def create_directories(self, CV=5):
-        """create all directories for saving data/results"""
-        self.dataset_plots_dir = f'results/{self.subj_name}/dataset_plots'
-        os.makedirs(self.dataset_plots_dir, exist_ok=True)
-
-        self.cv_results_save_dir = f'results/{self.subj_name}/CV_results/'
-        for cv_index in range(1, CV + 1):
-            os.makedirs(self.cv_results_save_dir + f'cv_{cv_index}', exist_ok=True)
+   
 
     def test(self, decision_timestep_num_list=(10,20,30,40,50,60)):
         cv_list = [f'cv_{i}' for i in range(1,6)]
@@ -71,11 +73,13 @@ class HGP(object):
                     pred_labels.append(pred_label)
                     true_label = class_list[int(np.argmax(self.test_Y[sample_index][start + decision_timestep_num, :]))]
                     true_labels.append(true_label)
+                    
                 self.true = true_labels
                 self.pred = pred_labels
 
                 acc = metrics.accuracy_score(self.pred, self.true)
                 results_DF.loc[cv_index,f'acc_{decision_timestep_num}'] = acc
+                
         results_DF.to_csv(self.cv_results_save_dir+'/cv_acc_results.csv')
 
 
